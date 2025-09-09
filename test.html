@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Stories Instagram</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f8f8f8;
+            padding: 20px;
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        #form {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        input {
+            padding: 8px;
+            font-size: 16px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            padding: 8px 12px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+
+        .btn-story {
+            background: #007bff;
+            color: #fff;
+        }
+
+        .btn-story:hover {
+            background: #0056b3;
+        }
+
+        .btn-post {
+            background: #28a745;
+            color: #fff;
+        }
+
+        .btn-post:hover {
+            background: #1e7e34;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 15px auto;
+            max-width: 600px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Grid layout cho posts */
+        .posts-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .post-item {
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+        }
+
+        .post-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .post-item video, .post-item img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            border-radius: 0;
+            margin: 0;
+            display: block;
+        }
+
+        .post-meta {
+            padding: 12px;
+            background: #fff;
+        }
+
+        .post-date {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+
+        .post-content {
+            font-size: 14px;
+            color: #333;
+            line-height: 1.4;
+            margin-bottom: 10px;
+            word-wrap: break-word;
+        }
+
+        /* Style cho stories (giữ nguyên) */
+        .story-item video, .story-item img {
+            width: 40%;
+            max-width: 400px;
+            border-radius: 12px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        /* Override cho video/img trong grid */
+        .posts-grid video, .posts-grid img {
+            width: 100% !important;
+            max-width: none !important;
+            height: 250px !important;
+            object-fit: cover !important;
+            border-radius: 0 !important;
+            margin: 0 !important;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .posts-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+                padding: 0 10px;
+            }
+            
+            .post-item video, .post-item img {
+                height: 200px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .posts-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .post-item video, .post-item img {
+                height: 300px;
+            }
+        }
+
+        .meta {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        a.download {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 10px 15px;
+            background: #6f42c1;
+            color: #fff;
+            border-radius: 8px;
+            text-decoration: none;
+        }
+
+        a.download:hover {
+            background: #5936a2;
+        }
+    </style>
+</head>
+<body>
+    <h2>IG Viewer</h2>
+
+    <div id="form">
+        <input type="text" id="username" placeholder="Nhập username Instagram...">
+        <button class="btn-story" onclick="loadStories()">Xem stories</button>
+        <button class="btn-post" onclick="loadPosts()">Xem posts</button>
+    </div>
+
+    <div id="content"></div>
+
+    <script>
+        async function loadStories() {
+            const user = document.getElementById('username').value.trim();
+            if (!user) return alert("Nhập username trước đã!");
+
+            const container = document.getElementById('content');
+            container.innerHTML = "<p>Đang tải stories...</p>";
+
+            try {
+                const url = `https://anon-viewer.com/content.php?url=${user}&method=allstories`;
+                const res = await fetch(url);
+                const data = await res.json();
+
+                container.innerHTML = ""; // clear
+
+                if (data.status !== "ok") {
+                    container.innerHTML = "<p>Không tìm thấy stories!</p>";
+                    return;
+                }
+
+                // Wrap stories content với class để áp dụng style riêng
+                const storyContainer = document.createElement('div');
+                storyContainer.className = 'story-container';
+                storyContainer.innerHTML = data.html;
+                
+                // Add class cho tất cả story items
+                const storyItems = storyContainer.querySelectorAll('.card, video, img');
+                storyItems.forEach(item => {
+                    item.classList.add('story-item');
+                });
+
+                container.appendChild(storyContainer);
+
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = "<p>Lỗi khi tải stories (có thể bị chặn CORS).</p>";
+            }
+        }
+
+        async function loadPosts() {
+            const user = document.getElementById('username').value.trim();
+            if (!user) return alert("Nhập username trước đã!");
+
+            const container = document.getElementById('content');
+            container.innerHTML = "<p>Đang tải posts...</p>";
+
+            try {
+                const url = `https://media.mollygram.com/?url=${user}&method=allposts`;
+                const res = await fetch(url);
+                const data = await res.json();
+
+                container.innerHTML = ""; // clear
+
+                if (data.status !== "ok") {
+                    container.innerHTML = "<p>Không tìm thấy posts!</p>";
+                    return;
+                }
+
+                // Tạo container grid cho posts
+                const gridContainer = document.createElement('div');
+                gridContainer.className = 'posts-grid';
+                
+                // Parse HTML response và tạo grid items
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = data.html;
+                
+                // Tìm tất cả các card elements chứa posts
+                const postCards = tempDiv.querySelectorAll('.card');
+                
+                postCards.forEach((card, index) => {
+                    const postItem = document.createElement('div');
+                    postItem.className = 'post-item';
+                    
+                    // Lấy media element (video hoặc img)
+                    const media = card.querySelector('video, img');
+                    if (media) {
+                        const clonedMedia = media.cloneNode(true);
+                        postItem.appendChild(clonedMedia);
+                    }
+                    
+                    // Lấy nội dung text của post
+                    const textContent = card.textContent || card.innerText || '';
+                    const cleanText = textContent.replace(/\s+/g, ' ').trim();
+                    
+                    // Lấy link download nếu có
+                    const downloadLink = card.querySelector('a[download], a[href*="download"]');
+                    const downloadUrl = downloadLink ? downloadLink.href : (media ? media.src : '');
+                    
+                    // Tạo meta info với nội dung đầy đủ
+                    const metaDiv = document.createElement('div');
+                    metaDiv.className = 'post-meta';
+                    
+                    // Hiển thị nội dung post (giới hạn độ dài)
+                    const shortText = cleanText.length > 100 ? cleanText.substring(0, 100) + '...' : cleanText;
+                    
+                    metaDiv.innerHTML = `
+                        <div class="post-date">Post #${index + 1}</div>
+                        ${shortText ? `<div class="post-content">${shortText}</div>` : ''}
+                        <a href="${downloadUrl}" class="download" download>
+                            📥 Tải xuống
+                        </a>
+                    `;
+                    
+                    postItem.appendChild(metaDiv);
+                    gridContainer.appendChild(postItem);
+                });
+
+                // Nếu không tìm thấy cards, fallback về method cũ
+                if (postCards.length === 0) {
+                    gridContainer.innerHTML = data.html;
+                }
+
+                container.appendChild(gridContainer);
+
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = "<p>Lỗi khi tải posts (có thể bị chặn CORS).</p>";
+            }
+        }
+    </script>
+</body>
+</html>
