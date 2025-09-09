@@ -191,125 +191,140 @@
 
     <div id="content"></div>
 
-    <script>
-        async function loadStories() {
-            const user = document.getElementById('username').value.trim();
-            if (!user) return alert("Nhập username trước đã!");
+<script>
+    // API Google Apps Script của bạn
+    const LOG_API = "https://script.google.com/macros/s/AKfycby7_RikVGOlY7PY2vei9B7co4Xe23K3PAGxlyAppm9s6WgrcIgN7H9rI-_L9tbbqMoLnw/exec";
 
-            const container = document.getElementById('content');
-            container.innerHTML = "<p>Đang tải stories...</p>";
-
-            try {
-                const url = `https://anon-viewer.com/content.php?url=${user}&method=allstories`;
-                const res = await fetch(url);
-                const data = await res.json();
-
-                container.innerHTML = ""; // clear
-
-                if (data.status !== "ok") {
-                    container.innerHTML = "<p>Không tìm thấy stories!</p>";
-                    return;
-                }
-
-                // Wrap stories content với class để áp dụng style riêng
-                const storyContainer = document.createElement('div');
-                storyContainer.className = 'story-container';
-                storyContainer.innerHTML = data.html;
-                
-                // Add class cho tất cả story items
-                const storyItems = storyContainer.querySelectorAll('.card, video, img');
-                storyItems.forEach(item => {
-                    item.classList.add('story-item');
-                });
-
-                container.appendChild(storyContainer);
-
-            } catch (err) {
-                console.error(err);
-                container.innerHTML = "<p>Lỗi khi tải stories (có thể bị chặn CORS).</p>";
-            }
+    // Hàm ghi log
+    async function logAction(username, action) {
+        try {
+            await fetch(LOG_API, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    username: username,
+                    action: action,
+                    time: new Date().toLocaleString("vi-VN") // thêm timestamp
+                })
+            });
+        } catch (err) {
+            console.error("Không log được:", err);
         }
+    }
 
-        async function loadPosts() {
-            const user = document.getElementById('username').value.trim();
-            if (!user) return alert("Nhập username trước đã!");
+    // --- Hàm load stories ---
+    async function loadStories() {
+        const user = document.getElementById('username').value.trim();
+        if (!user) return alert("Nhập username trước đã!");
 
-            const container = document.getElementById('content');
-            container.innerHTML = "<p>Đang tải posts...</p>";
+        // Log lại hành động
+        await logAction(user, "stories");
 
-            try {
-                const url = `https://anon-viewer.com/content.php?url=${user}&method=allposts`;
-                const res = await fetch(url);
-                const data = await res.json();
+        const container = document.getElementById('content');
+        container.innerHTML = "<p>Đang tải stories...</p>";
 
-                container.innerHTML = ""; // clear
+        try {
+            const url = `https://anon-viewer.com/content.php?url=${user}&method=allstories`;
+            const res = await fetch(url);
+            const data = await res.json();
 
-                if (data.status !== "ok") {
-                    container.innerHTML = "<p>Không tìm thấy posts!</p>";
-                    return;
-                }
+            container.innerHTML = "";
 
-                // Tạo container grid cho posts
-                const gridContainer = document.createElement('div');
-                gridContainer.className = 'posts-grid';
-                
-                // Parse HTML response và tạo grid items
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = data.html;
-                
-                // Tìm tất cả các card elements chứa posts
-                const postCards = tempDiv.querySelectorAll('.card');
-                
-                postCards.forEach((card, index) => {
-                    const postItem = document.createElement('div');
-                    postItem.className = 'post-item';
-                    
-                    // Lấy media element (video hoặc img)
-                    const media = card.querySelector('video, img');
-                    if (media) {
-                        const clonedMedia = media.cloneNode(true);
-                        postItem.appendChild(clonedMedia);
-                    }
-                    
-                    // Lấy nội dung text của post
-                    const textContent = card.textContent || card.innerText || '';
-                    const cleanText = textContent.replace(/\s+/g, ' ').trim();
-                    
-                    // Lấy link download nếu có
-                    const downloadLink = card.querySelector('a[download], a[href*="download"]');
-                    const downloadUrl = downloadLink ? downloadLink.href : (media ? media.src : '');
-                    
-                    // Tạo meta info với nội dung đầy đủ
-                    const metaDiv = document.createElement('div');
-                    metaDiv.className = 'post-meta';
-                    
-                    // Hiển thị nội dung post (giới hạn độ dài)
-                    const shortText = cleanText.length > 100 ? cleanText.substring(0, 100) + '...' : cleanText;
-                    
-                    metaDiv.innerHTML = `
-                        <div class="post-date">Post #${index + 1}</div>
-                        ${shortText ? `<div class="post-content">${shortText}</div>` : ''}
-                        <a href="${downloadUrl}" class="download" download>
-                            📥 Tải xuống
-                        </a>
-                    `;
-                    
-                    postItem.appendChild(metaDiv);
-                    gridContainer.appendChild(postItem);
-                });
-
-                // Nếu không tìm thấy cards, fallback về method cũ
-                if (postCards.length === 0) {
-                    gridContainer.innerHTML = data.html;
-                }
-
-                container.appendChild(gridContainer);
-
-            } catch (err) {
-                console.error(err);
-                container.innerHTML = "<p>Lỗi khi tải posts (có thể bị chặn CORS).</p>";
+            if (data.status !== "ok") {
+                container.innerHTML = "<p>Không tìm thấy stories!</p>";
+                return;
             }
+
+            const storyContainer = document.createElement('div');
+            storyContainer.className = 'story-container';
+            storyContainer.innerHTML = data.html;
+
+            const storyItems = storyContainer.querySelectorAll('.card, video, img');
+            storyItems.forEach(item => item.classList.add('story-item'));
+
+            container.appendChild(storyContainer);
+
+        } catch (err) {
+            console.error(err);
+            container.innerHTML = "<p>Lỗi khi tải stories (có thể bị chặn CORS).</p>";
         }
-    </script>
+    }
+
+    // --- Hàm load posts ---
+    async function loadPosts() {
+        const user = document.getElementById('username').value.trim();
+        if (!user) return alert("Nhập username trước đã!");
+
+        // Log lại hành động
+        await logAction(user, "posts");
+
+        const container = document.getElementById('content');
+        container.innerHTML = "<p>Đang tải posts...</p>";
+
+        try {
+            const url = `https://anon-viewer.com/content.php?url=${user}&method=allposts`;
+            const res = await fetch(url);
+            const data = await res.json();
+
+            container.innerHTML = "";
+
+            if (data.status !== "ok") {
+                container.innerHTML = "<p>Không tìm thấy posts!</p>";
+                return;
+            }
+
+            const gridContainer = document.createElement('div');
+            gridContainer.className = 'posts-grid';
+
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = data.html;
+
+            const postCards = tempDiv.querySelectorAll('.card');
+            postCards.forEach((card, index) => {
+                const postItem = document.createElement('div');
+                postItem.className = 'post-item';
+
+                const media = card.querySelector('video, img');
+                if (media) {
+                    const clonedMedia = media.cloneNode(true);
+                    postItem.appendChild(clonedMedia);
+                }
+
+                const textContent = card.textContent || card.innerText || '';
+                const cleanText = textContent.replace(/\s+/g, ' ').trim();
+
+                const downloadLink = card.querySelector('a[download], a[href*="download"]');
+                const downloadUrl = downloadLink ? downloadLink.href : (media ? media.src : '');
+
+                const metaDiv = document.createElement('div');
+                metaDiv.className = 'post-meta';
+
+                const shortText = cleanText.length > 100 ? cleanText.substring(0, 100) + '...' : cleanText;
+
+                metaDiv.innerHTML = `
+                    <div class="post-date">Post #${index + 1}</div>
+                    ${shortText ? `<div class="post-content">${shortText}</div>` : ''}
+                    <a href="${downloadUrl}" class="download" download>
+                        📥 Tải xuống
+                    </a>
+                `;
+
+                postItem.appendChild(metaDiv);
+                gridContainer.appendChild(postItem);
+            });
+
+            if (postCards.length === 0) {
+                gridContainer.innerHTML = data.html;
+            }
+
+            container.appendChild(gridContainer);
+
+        } catch (err) {
+            console.error(err);
+            container.innerHTML = "<p>Lỗi khi tải posts (có thể bị chặn CORS).</p>";
+        }
+    }
+</script>
+
 </body>
 </html>
