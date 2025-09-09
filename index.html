@@ -238,7 +238,7 @@
             container.innerHTML = "<p>Đang tải posts...</p>";
 
             try {
-                const url = `https://media.mollygram.com/?url=${user}&method=allposts`;
+                const url = `https://anon-viewer.com/content.php?url=${user}&method=allposts`;
                 const res = await fetch(url);
                 const data = await res.json();
 
