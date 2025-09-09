@@ -195,20 +195,31 @@
     // API Google Apps Script của bạn
     const LOG_API = "https://script.google.com/macros/s/AKfycby7_RikVGOlY7PY2vei9B7co4Xe23K3PAGxlyAppm9s6WgrcIgN7H9rI-_L9tbbqMoLnw/exec";
 
-    // Hàm ghi log
+    // Hàm ghi log - FIX CORS
     async function logAction(username, action) {
         try {
-            await fetch(LOG_API, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    username: username,
-                    action: action,
-                    time: new Date().toLocaleString("vi-VN") // thêm timestamp
-                })
+            // Sử dụng GET thay vì POST để tránh CORS preflight
+            const params = new URLSearchParams({
+                username: username,
+                action: action,
+                time: new Date().toLocaleString("vi-VN"),
+                timestamp: Date.now()
             });
+
+            // Method 1: Dùng GET với query params
+            await fetch(`${LOG_API}?${params.toString()}`, {
+                method: 'GET',
+                mode: 'no-cors' // Quan trọng: bypass CORS
+            });
+
         } catch (err) {
-            console.error("Không log được:", err);
+            // Fallback: Dùng image pixel tracking
+            try {
+                const img = new Image();
+                img.src = `${LOG_API}?username=${encodeURIComponent(username)}&action=${encodeURIComponent(action)}&time=${encodeURIComponent(new Date().toLocaleString("vi-VN"))}&_=${Date.now()}`;
+            } catch (e) {
+                console.error("Không log được:", err);
+            }
         }
     }
 
@@ -217,8 +228,8 @@
         const user = document.getElementById('username').value.trim();
         if (!user) return alert("Nhập username trước đã!");
 
-        // Log lại hành động
-        await logAction(user, "stories");
+        // Log lại hành động (không await để không block UI)
+        logAction(user, "stories");
 
         const container = document.getElementById('content');
         container.innerHTML = "<p>Đang tải stories...</p>";
@@ -228,6 +239,7 @@
             const urls = [
                 `https://api.allorigins.win/get?url=${encodeURIComponent(`https://anon-viewer.com/content.php?url=${user}&method=allstories`)}`,
                 `https://corsproxy.io/?${encodeURIComponent(`https://anon-viewer.com/content.php?url=${user}&method=allstories`)}`,
+                `https://cors-anywhere.herokuapp.com/https://anon-viewer.com/content.php?url=${user}&method=allstories`,
                 `https://anon-viewer.com/content.php?url=${user}&method=allstories`
             ];
 
@@ -281,8 +293,8 @@
         const user = document.getElementById('username').value.trim();
         if (!user) return alert("Nhập username trước đã!");
 
-        // Log lại hành động
-        await logAction(user, "posts");
+        // Log lại hành động (không await để không block UI)
+        logAction(user, "posts");
 
         const container = document.getElementById('content');
         container.innerHTML = "<p>Đang tải posts...</p>";
@@ -292,6 +304,7 @@
             const urls = [
                 `https://api.allorigins.win/get?url=${encodeURIComponent(`https://anon-viewer.com/content.php?url=${user}&method=allposts`)}`,
                 `https://corsproxy.io/?${encodeURIComponent(`https://anon-viewer.com/content.php?url=${user}&method=allposts`)}`,
+                `https://cors-anywhere.herokuapp.com/https://anon-viewer.com/content.php?url=${user}&method=allposts`,
                 `https://anon-viewer.com/content.php?url=${user}&method=allposts`
             ];
 
