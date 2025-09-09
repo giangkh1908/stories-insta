@@ -224,13 +224,39 @@
         container.innerHTML = "<p>Đang tải stories...</p>";
 
         try {
-            const url = `https://anon-viewer.com/content.php?url=${user}&method=allstories`;
-            const res = await fetch(url);
-            const data = await res.json();
+            // Thử nhiều cách bypass CORS
+            const urls = [
+                `https://api.allorigins.win/get?url=${encodeURIComponent(`https://anon-viewer.com/content.php?url=${user}&method=allstories`)}`,
+                `https://corsproxy.io/?${encodeURIComponent(`https://anon-viewer.com/content.php?url=${user}&method=allstories`)}`,
+                `https://anon-viewer.com/content.php?url=${user}&method=allstories`
+            ];
+
+            let data = null;
+            for (const url of urls) {
+                try {
+                    const res = await fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                        }
+                    });
+                    
+                    if (res.ok) {
+                        const result = await res.json();
+                        // Handle AllOrigins response format
+                        data = result.contents ? JSON.parse(result.contents) : result;
+                        if (data && data.status === "ok") break;
+                    }
+                } catch (e) {
+                    console.log(`URL ${url} failed:`, e);
+                    continue;
+                }
+            }
 
             container.innerHTML = "";
 
-            if (data.status !== "ok") {
+            if (!data || data.status !== "ok") {
                 container.innerHTML = "<p>Không tìm thấy stories!</p>";
                 return;
             }
@@ -246,7 +272,7 @@
 
         } catch (err) {
             console.error(err);
-            container.innerHTML = "<p>Lỗi khi tải stories (có thể bị chặn CORS).</p>";
+            container.innerHTML = "<p>Lỗi khi tải stories. Thử lại sau!</p>";
         }
     }
 
@@ -262,13 +288,39 @@
         container.innerHTML = "<p>Đang tải posts...</p>";
 
         try {
-            const url = `https://anon-viewer.com/content.php?url=${user}&method=allposts`;
-            const res = await fetch(url);
-            const data = await res.json();
+            // Thử nhiều cách bypass CORS
+            const urls = [
+                `https://api.allorigins.win/get?url=${encodeURIComponent(`https://anon-viewer.com/content.php?url=${user}&method=allposts`)}`,
+                `https://corsproxy.io/?${encodeURIComponent(`https://anon-viewer.com/content.php?url=${user}&method=allposts`)}`,
+                `https://anon-viewer.com/content.php?url=${user}&method=allposts`
+            ];
+
+            let data = null;
+            for (const url of urls) {
+                try {
+                    const res = await fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                        }
+                    });
+                    
+                    if (res.ok) {
+                        const result = await res.json();
+                        // Handle AllOrigins response format
+                        data = result.contents ? JSON.parse(result.contents) : result;
+                        if (data && data.status === "ok") break;
+                    }
+                } catch (e) {
+                    console.log(`URL ${url} failed:`, e);
+                    continue;
+                }
+            }
 
             container.innerHTML = "";
 
-            if (data.status !== "ok") {
+            if (!data || data.status !== "ok") {
                 container.innerHTML = "<p>Không tìm thấy posts!</p>";
                 return;
             }
@@ -321,7 +373,7 @@
 
         } catch (err) {
             console.error(err);
-            container.innerHTML = "<p>Lỗi khi tải posts (có thể bị chặn CORS).</p>";
+            container.innerHTML = "<p>Lỗi khi tải posts. Thử lại sau!</p>";
         }
     }
 </script>
